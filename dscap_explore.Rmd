@@ -58,6 +58,10 @@ summary
 hist(nchar(news))
 hist(nchar(twitter))
 hist(nchar(blog))
+# total words in corpus (tokens)
+# unique words in corpus (unique tokens)
+# counts of 10 most frequent wors
+
 ```
 
 ```{r loadSamples}
@@ -78,5 +82,7 @@ test <- strsplit(test, "\\?+ |\\!+ |\\.+ ")
 # Stemming (optional, most common is Porter Stemmer)
 
 # Stopword removal (the, a, of, for, in; SMART is a common stopword list) - is this helpful for this ???
+
+
 
 ```
