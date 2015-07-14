@@ -1,0 +1,61 @@
+Data Science Capstone NLP Exploratory Analysis
+=============================
+```{r setOpts, warning=FALSE, message=FALSE}
+library("knitr")
+library("tm")
+opts_chunk$set(cache=TRUE, warning=FALSE, message=FALSE)
+```
+
+```{r readNews}
+newsCon <- file("Desktop/data/en_US.news.txt", "r")
+newsC <- readLines(newsCon)
+close(newsCon)
+
+newsLength <- length(newsC)
+newsAvgChar <- round(sum(nchar(newsC))/newsLength,0)
+newsSum <- summary(nchar(newsC))
+
+news <- sample(newsC, length(newsC)*.05)
+write.table(news, "en_US.news.sample.txt")
+```
+
+```{r readTwitter}
+twitterCon <- file("Desktop/data/en_US.twitter.txt", "r")
+twitterC <- readLines(twitterCon)
+close(twitterCon)
+
+twitterLength <- length(twitterC)
+twitterAvgChar <- round(sum(nchar(twitterC))/twitterLength,0)
+twitterSum <- summary(nchar(twitterC))
+
+twitter <- sample(twitterC, length(twitterC)*.05)
+write.table(twitter, "en_US.twitter.sample.txt")
+```
+
+```{r readBlog}
+blogCon <- file("Desktop/data/en_US.blogs.txt", "r")
+blogC <- readLines(blogCon)
+close(blogCon)
+
+blogLength <- length(blogC)
+blogAvgChar <- round(sum(nchar(blogC))/blogLength,0)
+blogSum <- summary(nchar(blogC))
+
+blog <- sample(blogC, length(blogC)*.05)
+write.table(blog, "en_US.blog.sample.txt")
+
+```
+
+```{r tables}
+table <- data.frame(Type=c("News", "Twitter", "Blog"), Lines=c(newsLength, twitterLength, blogLength), Avg.Char.Per.Line=c(newsAvgChar, twitterAvgChar, blogAvgChar))
+
+summary <- rbind(newsSum, twitterSum, blogSum)
+row.names(summary) <- c("News", "Twitter", "Blog")
+
+summary
+
+hist(nchar(news))
+hist(nchar(twitter))
+hist(nchar(blog))
+
+```
