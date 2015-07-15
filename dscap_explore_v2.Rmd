@@ -1,0 +1,191 @@
+Data Science Capstone NLP Exploratory Analysis
+=============================
+```{r setOpts, warning=FALSE, message=FALSE}
+library("knitr")
+library("tm")
+library("RWeka")
+library("plyr")
+library("ggplot2")
+library("gridExtra")
+library("SnowballC")
+opts_chunk$set(cache=TRUE, warning=FALSE, message=FALSE, fig.height=5, fig.width=5)
+```
+
+```{r loadSamples}
+news <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.news.sample.txt", stringsAsFactors=FALSE)
+twitter <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.twitter.sample.txt", stringsAsFactors=FALSE)
+blog <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.blog.sample.txt", stringsAsFactors=FALSE)
+
+# load in the data
+setwd("/Users/kwalker/git_projects/DS_Capstone/")
+corpus <- Corpus(DirSource("/Users/kwalker/git_Projects/DS_Capstone/testdata"), readerControl=list(language="en"))
+
+# clean the corpus
+corpus <- tm_map(corpus, removeNumbers)
+corpus <- tm_map(corpus, removePunctuation)
+corpus <- tm_map(corpus, stripWhitespace)
+corpus <- tm_map(corpus, content_transformer(tolower))
+#corpus <- tm_map(corpus, stemDocument)
+
+# format to tdm and tokenize
+options(mc.cores=1)
+unigrams <- function(x) NGramTokenizer(x, Weka_control(min=1, max=1))
+bigrams <- function(x) NGramTokenizer(x, Weka_control(min=2, max=2))
+trigrams <- function(x) NGramTokenizer(x, Weka_control(min=3, max=3))
+
+uniCorpus <- TermDocumentMatrix(corpus, control=list(tokenize = unigrams))
+biCorpus <- TermDocumentMatrix(corpus, control=list(tokenize = bigrams))
+triCorpus <- TermDocumentMatrix(corpus, control=list(tokenize = trigrams))
+
+freqTerms <- function(x) {
+    freqTerms <- findFreqTerms(x, lowfreq = 5)
+    freqTable <- rowSums(as.matrix(x[freqTerms,]))
+    freqTable <- data.frame(word=names(freqTable), freq=freqTable)
+    freqTable <- freqTable[order(-freqTable$freq), ]
+    freqTable$rank <- 1:length(freqTable[,1])
+    kable(freqTable[1:10, c(3,1,2) ], row.names=FALSE)
+}
+
+freqTerms(uniCorpus)
+freqTerms(biCorpus)
+freqTerms(triCorpus)
+
+
+```
+
+```{r tokenization}
+newsTT <- WordTokenizer(unlist(news))
+twitterTT <- WordTokenizer(unlist(twitter))
+blogTT <- WordTokenizer(unlist(blog))
+
+# how to handle punctuation? numbers?
+
+
+```
+
+```{r tokenTable}
+# total words (tokens), unique words (unique tokens) in corpus (tokens)
+wordTable <- data.frame(
+    Corpus=c("News 5% Sample", "Twitter 5% Sample", "Blog 5% Sample"), 
+    Total.Tokens=c(length(newsTT), length(twitterTT), length(blogTT)), 
+    Unique.Tokens=c(length(unique(newsTT)), length(unique(twitterTT)), length(unique(blogTT)))
+    )
+
+kable(wordTable, row.names=FALSE)
+``` 
+
+```{r freqTable}
+# Some words are more frequent than others - what are the distributions of word frequencies? 
+newsFreq <- count(newsTT)
+newsFreq <- newsFreq[order(newsFreq$freq, decreasing=TRUE), ]
+newsFreq$Rank <- 1:length(newsFreq[,1])
+
+twitterFreq <- count(twitterTT)
+twitterFreq <- twitterFreq[order(twitterFreq$freq, decreasing=TRUE), ]
+twitterFreq$Rank <- 1:length(twitterFreq[,1])
+
+blogFreq <- count(blogTT)
+blogFreq <- blogFreq[order(blogFreq$freq, decreasing=TRUE), ]
+blogFreq$Rank <- 1:length(blogFreq[,1])
+
+freqTable <- cbind(newsFreq[1:10, c(3,1,2)], twitterFreq[1:10, 1:2], blogFreq[1:10, 1:2])
+colnames(freqTable) <- c("Rank", "News", "f", "Twitter", "f", "Blog", "f")
+kable(freqTable, row.names=FALSE)
+```
+
+```{r freqPlot}
+newsFreq$Sample <- "News"
+twitterFreq$Sample <- "Twitter"
+blogFreq$Sample <- "Blog"
+megaFreq <- rbind(newsFreq, twitterFreq, blogFreq)
+
+hist(log10(megaFreq$freq))
+```
+
+Via [Wikipedia](https://en.wikipedia.org/wiki/Zipf%27s_law): "Zipf's law states that given some corpus of natural language utterances, the frequency of any word is inversely proportional to its rank in the frequency table."
+
+Zipf's Law holds for all three of our corpora.  
+
+```{r zipfPlot}
+ggplot(megaFreq, aes(log10(freq), log10(Rank))) + geom_line(aes(color=Sample)) + labs(title="Zipf's Law") + theme(panel.background=element_blank())
+```
+
+```{r ngramFreq}
+# What are the frequencies of 2-grams and 3-grams in the dataset? 
+corpus <- unlist(rbind(news, twitter, blog))
+
+corpus1 <- WordTokenizer(corpus)
+corpus1 <- count(corpus1)
+corpus1 <- corpus1[order(corpus1$freq, decreasing=TRUE), ]
+corpus1$Rank <- 1:length(corpus1[,1])
+
+corpus2 <- NGramTokenizer(corpus, Weka_control(min = 2, max = 2))
+corpus2 <- count(corpus2)
+corpus2 <- corpus2[order(corpus2$freq, decreasing=TRUE), ]
+corpus2$Rank <- 1:length(corpus2[,1])
+
+hist(log10(corpus2$freq), main="Log Frequency of 2-grams")
+
+corpus3 <- NGramTokenizer(corpus, Weka_control(min = 3, max = 3))
+corpus3 <- count(corpus3)
+corpus3 <- corpus3[order(corpus3$freq, decreasing=TRUE), ]
+corpus3$Rank <- 1:length(corpus3[,1])
+
+hist(log10(corpus3$freq), main="Log Frequency of 3-grams")
+
+gramFreqTable <- cbind(corpus2[1:10, c(3,1,2)], corpus3[1:10, 1:2])
+colnames(gramFreqTable) <- c("Rank", "2-gram", "f", "3-gram", "f")
+kable(gramFreqTable, row.names=FALSE)
+```
+
+```{r}
+# How many unique words do you need in a frequency sorted dictionary to cover 50% of all word instances in the language? 90%? 
+allWordInstances <- sum(corpus1$freq)
+halfWI <- allWordInstances*0.5
+ninetyWI <- allWordInstances*0.9
+
+corpus1$Sum <- cumsum(corpus1$freq)
+
+fifty <- subset(corpus1, corpus1$Sum > halfWI)
+fifty <- fifty[1,3]
+
+ninety <- subset(corpus1, corpus1$Sum > ninetyWI)
+ninety <- ninety[1,3]
+```
+
+To cover 50% of all word instances, a dictionary of only *`r fifty`* words are needed. To cover 90% of all word instances, a dictionary of *`r ninety`* words are needed.
+
+
+```{r}
+# How do you evaluate how many of the words come from foreign languages? 
+
+```
+
+```{r}
+# Can you think of a way to increase the coverage -- identifying words that may not be in the corpora or using a smaller number of words in the dictionary to cover the same number of phrases?
+
+```
+
+
+```{r cleanCorpus}
+# Remove unwanted characters (HTML tags, etc.)
+
+# Word boundaires (white space, punctuation [consider Ph.D., isn't, e-mail])
+#test <- twitter[1:10,]
+#test <- paste(test, collapse=" ")
+#test <- strsplit(test, "\\?+ |\\!+ |\\.+ ")
+
+# Stemming (optional, most common is Porter Stemmer)
+
+# Stopword removal (the, a, of, for, in; SMART is a common stopword list) - is this helpful for this ???
+
+```
+
+```{r trainPredictSimple}
+# combine corpora
+# separate into train and test sets
+# get frequency distribution of two word ngrams
+
+
+m <- Corpus(VectorSource(blog))
+```

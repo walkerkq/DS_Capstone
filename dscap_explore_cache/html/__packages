@@ -1,0 +1,9 @@
+base
+knitr
+NLP
+tm
+RWeka
+plyr
+ggplot2
+gridExtra
+SnowballC
