@@ -2,7 +2,10 @@ Data Science Capstone NLP Exploratory Analysis
 =============================
 
 # Introduction  
---- mention sampling reasoning (5%)
+
+This report endeavors to explore and understand a three large text files. The text has been collected from three sources: blogs, news and Twitter. The data is from a corpus called [HC Corpora](www.corpora.heliohost.org). See the [readme file](http://www.corpora.heliohost.org/aboutcorpus.html) for details on the corpora available.  
+
+The text files will ultimately be used to test and train a model that will predict the next word in an unfinished sentence, along the lines of the app [SwiftKey](https://itunes.apple.com/app/swiftkey-keyboard/id911813648?ls=1&mt=8), which descibes itself as "a smart keyboard that learns from you, replacing your device’s built-in keyboard with one that adapts to the way you type. The app learns your writing style to give you super-accurate autocorrect and intelligent next-word prediction, reducing keystrokes and getting smarter over time." 
 
 ```{r setOpts, warning=FALSE, message=FALSE, echo=FALSE}
 library("knitr")
@@ -12,23 +15,35 @@ library("plyr")
 library("ggplot2")
 library("gridExtra")
 library("SnowballC")
-opts_chunk$set(cache=TRUE, warning=FALSE, message=FALSE, fig.height=5, fig.width=5, echo=FALSE)
+opts_chunk$set(cache=TRUE, warning=FALSE, message=FALSE, fig.height=4, fig.width=4, echo=FALSE)
 ```
-
-## Load in the data 
-The three files in their entirety amount to more than 500 Mb and take several minutes just to load into the R workspace, so each file was sampled at 5% to produce files small enough to work with. 
+**Helpful Terminology**  
+Corpus: a series of text files analyzed together as a set  
+Token: a piece of language; a word  
+Tokenize: split text into individual pieces/words  
 
 ```{r loadSamples}
-#news <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.news.sample.txt", stringsAsFactors=FALSE)
-#twitter <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.twitter.sample.txt", stringsAsFactors=FALSE)
-#blog <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.blog.sample.txt", stringsAsFactors=FALSE)
+news <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.news.sample.txt", stringsAsFactors=FALSE)
+twitter <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.twitter.sample.txt", stringsAsFactors=FALSE)
+blog <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.blog.sample.txt", stringsAsFactors=FALSE)
 
-news <- read.table("/Users/kaylinwalker/R/DS_Capstone/data/en_US.news.sample.txt", stringsAsFactors=FALSE)
-twitter <- read.table("/Users/kaylinwalker/R/DS_Capstone/data/en_US.twitter.sample.txt", stringsAsFactors=FALSE)
-blog <- read.table("/Users/kaylinwalker/R/DS_Capstone/data/en_US.blog.sample.txt", stringsAsFactors=FALSE)
+#news <- read.table("/Users/kaylinwalker/R/DS_Capstone/data/en_US.news.sample.txt", stringsAsFactors=FALSE)
+#twitter <- read.table("/Users/kaylinwalker/R/DS_Capstone/data/en_US.twitter.sample.txt", stringsAsFactors=FALSE)
+#blog <- read.table("/Users/kaylinwalker/R/DS_Capstone/data/en_US.blog.sample.txt", stringsAsFactors=FALSE)
 ```
 
-## Explore the data  
+# Exploratory Analysis  
+
+Our exploratory analysis will include:  
+
+- looking at descriptive statistics regarding the size and shape of the corpus;  
+- cleaning the corpus;  
+- tokenizing the corpus;  
+- describing the features of the tokenized corpus; and  
+- estimating the size of corpus needed to satisfy our task.   
+
+### Describing the data set  
+The three files in their entirety amount to more than 500 Mb and take several minutes just to load into the R workspace, so each file was sampled at 5% to produce files small enough to work with. 
 
 The Twitter data set is by far the longest, with more than twice as many lines as the news and blog data sets, though the blog data set leads in the total number of tokens and the number of unique tokens.  
 
@@ -51,20 +66,44 @@ wordTable <- data.frame(
 
 kable(wordTable, row.names=FALSE)
 ``` 
+  
+**Sample lines**  
+```{r sampleLines}
+paste("NEWS:  ", news[100,])
+paste("TWITTER:  ", twitter[100,])
+paste("BLOG:  ", blog[100,])
+```
 
-## Clean the data  
-To clean the data, we will reload in the data as a corpus in order to use the `tm` package.  
+### Cleaning the data  set
 
-The order of cleaning is:  
+**Punctuation and numbers**  
+For simplicity, I've decided to handle puncutation and numbers by removing them completely. In general, numbers and punctuation don't help predict the next word, e.g. in the phrase "At the park there were 5 ducks," the word ducks is not associated or dependent on the number 5 at all. The same can be said for most punctuation (with aprostrophes posing the biggest problem). 
+
+**Capitalization**  
+All words will be transformed into lowercase. This poses some potential issues were tokens that are not the same will be treated the same - such as the name "Bill" vs. "bill." 
+
+**Stopwords**  
+I have intentionally left in the English stopwords - a, an, and, the, but, to - because they play an important role in linking text. If the goal was to analyze sentiment or determine subject, we could leave them out, but for predicting words, you need "to" in "I went to the store" for it to make sense.  
+
+**Profanity**  
+?????  
+I'm not sure that I mind profanity. Most swear words are adjectives, which wouldn't cause too many problems to remove.     
+
+**Typos, garbage and foreign languages**  
+??????  
+
+**Cleaning**  
+To clean the data, I will reload in the data as a corpus in order to use the `tm` package.  The order of cleaning is:  
+
 - Remove numbers  
 - Remove punctuation  
 - Strip whitespace  
 - Transform to lowercase  
 
 ```{r exploreCorpus, echo=TRUE}
-#setwd("/Users/kwalker/git_projects/DS_Capstone/")
-setwd("/Users/kaylinwalker/R")
-corpus <- Corpus(DirSource("DS_Capstone/testdata"), readerControl=list(language="en"))
+setwd("/Users/kwalker/git_projects/DS_Capstone/")
+#setwd("/Users/kaylinwalker/R")
+corpus <- Corpus(DirSource("testdata"), readerControl=list(language="en"))
 
 corpus <- tm_map(corpus, removeNumbers)
 corpus <- tm_map(corpus, removePunctuation)
@@ -72,7 +111,7 @@ corpus <- tm_map(corpus, stripWhitespace)
 corpus <- tm_map(corpus, content_transformer(tolower))
 ```
 
-## Tokenization  
+### Tokenizing the data set  
 
 Using the `RWeka` package in conjunction with the `tm` package, I have created three term document matrices - one for unigrams, one for bigrams, and one for trigrams.  
 
@@ -89,7 +128,7 @@ triCorpus <- TermDocumentMatrix(corpus, control=list(tokenize = trigrams))
 
 ```
 
-## Word frequency  
+### Describing the tokenized data set  
 *Some words are more frequent than others - what are the distributions of word frequencies?*  
 
 ```{r freqWords, echo=TRUE}
@@ -98,59 +137,61 @@ freqTable <- rowSums(as.matrix(uniCorpus[freqTerms,]))
 freqTable <- data.frame(word=names(freqTable), freq=freqTable)
 freqTable <- freqTable[order(-freqTable$freq), ]
 freqTable$rank <- 1:length(freqTable[,1])
-kable(freqTable[1:10, c(3,1,2) ], row.names=FALSE)
-
-hist(log10(freqTable$freq))
 ```
 
-### Zipf's Law  
-
-Via [Wikipedia](https://en.wikipedia.org/wiki/Zipf%27s_law): "Zipf's law states that given some corpus of natural language utterances, the frequency of any word is inversely proportional to its rank in the frequency table."
-
-Zipf's Law holds for all three of our corpora.  
-
-```{r zipfPlot}
-ggplot(freqTable, aes(log10(freq), log10(rank))) + geom_line(color="red") + labs(title="Zipf's Law") + theme(panel.background=element_blank())
-```
-
-## Bi- and tri-gram frequency  
-
-*What are the frequencies of 2-grams and 3-grams in the dataset?*  
-
-```{r ngramFreq}
+```{r freqWords2}
 freqTerms2 <- findFreqTerms(biCorpus, lowfreq = 5)
 freqTable2 <- rowSums(as.matrix(biCorpus[freqTerms2,]))
 freqTable2 <- data.frame(word=names(freqTable2), freq=freqTable2)
 freqTable2 <- freqTable2[order(-freqTable2$freq), ]
 freqTable2$rank <- 1:length(freqTable2[,1])
-kable(freqTable2[1:10, c(3,1,2) ], row.names=FALSE)
-
-hist(log10(freqTable2$freq))
 
 freqTerms3 <- findFreqTerms(triCorpus, lowfreq = 5)
 freqTable3 <- rowSums(as.matrix(triCorpus[freqTerms3,]))
 freqTable3 <- data.frame(word=names(freqTable3), freq=freqTable3)
 freqTable3 <- freqTable3[order(-freqTable3$freq), ]
 freqTable3$rank <- 1:length(freqTable3[,1])
-kable(freqTable3[1:10, c(3,1,2) ], row.names=FALSE)
 
-hist(log10(freqTable3$freq))
+gramTable <- cbind(freqTable[1:10, c(3,1,2) ], freqTable2[1:10, 1:2],freqTable3[1:10, 1:2 ])
+colnames(gramTable) <- c("rank", "uni-gram", "f", "bi-gram", "f", "tri-gram", "f")
+
+kable(gramTable, row.names=FALSE)
+
+hist(log10(freqTable$freq),  main="Log10 Uni-gram Frequency")
+hist(log10(freqTable2$freq), main="Log10 Bi-gram Frequency")
+hist(log10(freqTable3$freq), main="Log10 Tri-gram Frequency")
 
 ```
 
-## Language coverage  
-*How many unique words do you need in a frequency sorted dictionary to cover 50% of all word instances in the language? 90%?*   
+### Zipf's Law  
+
+Via [Wikipedia](https://en.wikipedia.org/wiki/Zipf%27s_law): "Zipf's law states that given some corpus of natural language utterances, the frequency of any word is inversely proportional to its rank in the frequency table." Zipf's Law holds for our corpus.  
+
+```{r zipfPlot, echo=TRUE}
+plot(x=log10(freqTable$freq), y=log10(freqTable$rank), type="l", main="Zipf's Law")
+```
+
+### Compressing the data set  
 
 ```{r}
-allWordInstances <- sum(freqTable$freq)
-freqTable$Sum <- cumsum(freqTable$freq)
+# How many unique words do you need in a frequency sorted dictionary to cover 50% of all word instances in the language? 90%?
 
-fifty <- subset(freqTable, freqTable$Sum >  allWordInstances*0.5)
-ninety <- subset(freqTable, freqTable$Sum >  allWordInstances*0.9)
+# Can you think of a way to increase the coverage -- identifying words that may not be in the corpora or using a smaller number of words in the dictionary to cover the same number of phrases?
+
+freqTable$Sum <- cumsum(freqTable$freq)
+uni50 <- subset(freqTable, freqTable$Sum >  sum(freqTable$freq)*0.5) #266
+uni90 <- subset(freqTable, freqTable$Sum >  sum(freqTable$freq)*0.9) #6676 
+uniCutoff <- uni90[1,3]
+uniDictionary <- freqTable[freqTable$rank < uniCutoff, 1]
+uniDictionary <- as.character(unlist(uniDictionary))
+
+corpus2 <- removeSparseTerms(uniCorpus, 0.5)
+
+
 ```
 To compute this, I calculated a cumulative sum of the token frequencies and stopped at the row that passed 50%/90% of total tokens.  
 
-To cover 50% of all word instances, a dictionary of only **`r fifty[1,3]`** words are needed. To cover 90% of all word instances, a dictionary of **`r fifty[1,3]`** words are needed.
+To cover 50% of all word instances, a dictionary of only **`r uni50[1,3]`** words are needed. To cover 90% of all word instances, a dictionary of **`r uniCutoff`** words are needed.
 
 
 ```{r}
@@ -158,31 +199,10 @@ To cover 50% of all word instances, a dictionary of only **`r fifty[1,3]`** word
 
 ```
 
-```{r}
-# Can you think of a way to increase the coverage -- identifying words that may not be in the corpora or using a smaller number of words in the dictionary to cover the same number of phrases?
-
-```
-
-
-```{r cleanCorpus}
-# Remove unwanted characters (HTML tags, etc.)
-
-# Word boundaires (white space, punctuation [consider Ph.D., isn't, e-mail])
-#test <- twitter[1:10,]
-#test <- paste(test, collapse=" ")
-#test <- strsplit(test, "\\?+ |\\!+ |\\.+ ")
-
-# Stemming (optional, most common is Porter Stemmer)
-
-# Stopword removal (the, a, of, for, in; SMART is a common stopword list) - is this helpful for this ???
-
-```
 
 ```{r trainPredictSimple}
 # combine corpora
 # separate into train and test sets
 # get frequency distribution of two word ngrams
-
-
 m <- Corpus(VectorSource(blog))
 ```
