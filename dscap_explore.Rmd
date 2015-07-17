@@ -23,13 +23,13 @@ Token: a piece of language; a word
 Tokenize: split text into individual pieces/words  
 
 ```{r loadSamples}
-news <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.news.sample.txt", stringsAsFactors=FALSE)
-twitter <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.twitter.sample.txt", stringsAsFactors=FALSE)
-blog <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.blog.sample.txt", stringsAsFactors=FALSE)
+#news <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.news.sample3.txt", stringsAsFactors=FALSE)
+#twitter <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.twitter.sample3.txt", stringsAsFactors=FALSE)
+#blog <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.blog.sample3.txt", stringsAsFactors=FALSE)
 
-#news <- read.table("/Users/kaylinwalker/R/DS_Capstone/data/en_US.news.sample.txt", stringsAsFactors=FALSE)
-#twitter <- read.table("/Users/kaylinwalker/R/DS_Capstone/data/en_US.twitter.sample.txt", stringsAsFactors=FALSE)
-#blog <- read.table("/Users/kaylinwalker/R/DS_Capstone/data/en_US.blog.sample.txt", stringsAsFactors=FALSE)
+news <- read.table("/Users/kaylinwalker/R/DS_Capstone/data/en_US.news.sample3.txt", stringsAsFactors=FALSE)
+twitter <- read.table("/Users/kaylinwalker/R/DS_Capstone/data/en_US.twitter.sample3.txt", stringsAsFactors=FALSE)
+blog <- read.table("/Users/kaylinwalker/R/DS_Capstone/data/en_US.blog.sample3.txt", stringsAsFactors=FALSE)
 ```
 
 # Exploratory Analysis  
@@ -43,7 +43,7 @@ Our exploratory analysis will include:
 - estimating the size of corpus needed to satisfy our task.   
 
 ### Describing the data set  
-The three files in their entirety amount to more than 500 Mb and take several minutes just to load into the R workspace, so each file was sampled at 5% to produce files small enough to work with. 
+The three files in their entirety amount to more than 500 Mb and take several minutes just to load into the R workspace, so each file was sampled at 3% to produce files small enough to work with. 
 
 The Twitter data set is by far the longest, with more than twice as many lines as the news and blog data sets, though the blog data set leads in the total number of tokens and the number of unique tokens.  
 
@@ -56,7 +56,7 @@ avgChar <- function (x) round(sum(nchar(unlist(x)))/dim(x)[1],0)
 avgTokens  <- function (x,y) round(length(y)/dim(x)[1],0)
 
 wordTable <- data.frame(
-    Corpus=c("News 5% Sample", "Twitter 5% Sample", "Blog 5% Sample"), 
+    Corpus=c("News 3% Sample", "Twitter 3% Sample", "Blog 3% Sample"), 
     Lines=c(dim(news)[1], dim(twitter)[1], dim(blog)[1]),
     Avg.Char.Line=c(avgChar(news), avgChar(twitter), avgChar(blog)),
     Avg.Tokens.Line=c(avgTokens(news, newsTT), avgTokens(twitter, twitterTT), avgTokens(blog, blogTT)),
@@ -101,9 +101,9 @@ To clean the data, I will reload in the data as a corpus in order to use the `tm
 - Transform to lowercase  
 
 ```{r exploreCorpus, echo=TRUE}
-setwd("/Users/kwalker/git_projects/DS_Capstone/")
-#setwd("/Users/kaylinwalker/R")
-corpus <- Corpus(DirSource("testdata"), readerControl=list(language="en"))
+#setwd("/Users/kwalker/git_projects/DS_Capstone/")
+setwd("/Users/kaylinwalker/R/DS_Capstone")
+corpus <- Corpus(DirSource("data"), readerControl=list(language="en"))
 
 corpus <- tm_map(corpus, removeNumbers)
 corpus <- tm_map(corpus, removePunctuation)
@@ -125,41 +125,33 @@ trigrams <- function(x) NGramTokenizer(x, Weka_control(min=3, max=3))
 uniCorpus <- TermDocumentMatrix(corpus, control=list(tokenize = unigrams))
 biCorpus <- TermDocumentMatrix(corpus, control=list(tokenize = bigrams))
 triCorpus <- TermDocumentMatrix(corpus, control=list(tokenize = trigrams))
-
 ```
 
 ### Describing the tokenized data set  
 *Some words are more frequent than others - what are the distributions of word frequencies?*  
 
 ```{r freqWords, echo=TRUE}
-freqTerms <- findFreqTerms(uniCorpus, lowfreq = 5)
-freqTable <- rowSums(as.matrix(uniCorpus[freqTerms,]))
-freqTable <- data.frame(word=names(freqTable), freq=freqTable)
-freqTable <- freqTable[order(-freqTable$freq), ]
-freqTable$rank <- 1:length(freqTable[,1])
-```
+freqFunc <- function(corpus) {
+     terms <- findFreqTerms(corpus, lowfreq = 5)
+     table <- rowSums(as.matrix(corpus[terms,]))
+     table <- data.frame(word=names(table), freq=table)
+     table <- table[order(-table$freq), ]
+     table$rank <- 1:length(table[,1])
+     return(table)
+}
 
-```{r freqWords2}
-freqTerms2 <- findFreqTerms(biCorpus, lowfreq = 5)
-freqTable2 <- rowSums(as.matrix(biCorpus[freqTerms2,]))
-freqTable2 <- data.frame(word=names(freqTable2), freq=freqTable2)
-freqTable2 <- freqTable2[order(-freqTable2$freq), ]
-freqTable2$rank <- 1:length(freqTable2[,1])
+freqUni <- freqFunc(uniCorpus)
+freqBi <- freqFunc(biCorpus)
+freqTri <- freqFunc(triCorpus)
 
-freqTerms3 <- findFreqTerms(triCorpus, lowfreq = 5)
-freqTable3 <- rowSums(as.matrix(triCorpus[freqTerms3,]))
-freqTable3 <- data.frame(word=names(freqTable3), freq=freqTable3)
-freqTable3 <- freqTable3[order(-freqTable3$freq), ]
-freqTable3$rank <- 1:length(freqTable3[,1])
-
-gramTable <- cbind(freqTable[1:10, c(3,1,2) ], freqTable2[1:10, 1:2],freqTable3[1:10, 1:2 ])
+gramTable <- cbind(freqUni[1:10, c(3,1,2) ], freqBi[1:10, 1:2],freqTri[1:10, 1:2 ])
 colnames(gramTable) <- c("rank", "uni-gram", "f", "bi-gram", "f", "tri-gram", "f")
 
 kable(gramTable, row.names=FALSE)
 
-hist(log10(freqTable$freq),  main="Log10 Uni-gram Frequency")
-hist(log10(freqTable2$freq), main="Log10 Bi-gram Frequency")
-hist(log10(freqTable3$freq), main="Log10 Tri-gram Frequency")
+hist(log10(freqUni$freq),  main="Log10 Uni-gram Frequency")
+hist(log10(freqBi$freq), main="Log10 Bi-gram Frequency")
+hist(log10(freqTri$freq), main="Log10 Tri-gram Frequency")
 
 ```
 
@@ -168,7 +160,7 @@ hist(log10(freqTable3$freq), main="Log10 Tri-gram Frequency")
 Via [Wikipedia](https://en.wikipedia.org/wiki/Zipf%27s_law): "Zipf's law states that given some corpus of natural language utterances, the frequency of any word is inversely proportional to its rank in the frequency table." Zipf's Law holds for our corpus.  
 
 ```{r zipfPlot, echo=TRUE}
-plot(x=log10(freqTable$freq), y=log10(freqTable$rank), type="l", main="Zipf's Law")
+plot(x=log10(freqUni$freq), y=log10(freqUni$rank), type="l", main="Zipf's Law")
 ```
 
 ### Compressing the data set  
@@ -178,15 +170,22 @@ plot(x=log10(freqTable$freq), y=log10(freqTable$rank), type="l", main="Zipf's La
 
 # Can you think of a way to increase the coverage -- identifying words that may not be in the corpora or using a smaller number of words in the dictionary to cover the same number of phrases?
 
-freqTable$Sum <- cumsum(freqTable$freq)
-uni50 <- subset(freqTable, freqTable$Sum >  sum(freqTable$freq)*0.5) #266
-uni90 <- subset(freqTable, freqTable$Sum >  sum(freqTable$freq)*0.9) #6676 
-uniCutoff <- uni90[1,3]
-uniDictionary <- freqTable[freqTable$rank < uniCutoff, 1]
-uniDictionary <- as.character(unlist(uniDictionary))
+freqUni$Sum <- cumsum(freqUni$freq)
+uni50 <- subset(freqUni, freqUni$Sum >  sum(freqUni$freq)*0.5) #266
 
-corpus2 <- removeSparseTerms(uniCorpus, 0.5)
+compressFunc <- function(fTable, fCorpus) {
+     fTable$Sum <- cumsum(fTable$freq)
+     majority <- subset(fTable, fTable$Sum >  sum(fTable$freq)*0.9) 
+     cutoff <- majority[1,3]
+     dictionary <- fTable[fTable$rank < cutoff, 1]
+     dictionary <- as.character(unlist(dictionary))
+     compress <- rowSums(as.matrix(fCorpus[dictionary,]))
+     compress <- data.frame(word=dictionary, freq=compress)
+}
 
+uniCompress <- compressFunc(freqUni, uniCorpus)
+biCompress <- compressFunc(freqBi, biCorpus)
+triCompress <- compressFunc(freqTri, triCorpus)
 
 ```
 To compute this, I calculated a cumulative sum of the token frequencies and stopped at the row that passed 50%/90% of total tokens.  

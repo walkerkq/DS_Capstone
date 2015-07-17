@@ -8,6 +8,7 @@ opts_chunk$set(cache=TRUE, warning=FALSE, message=FALSE)
 ```
 
 ```{r readNews, eval=FALSE}
+setwd("/Users/kaylinwalker/")
 newsCon <- file("Desktop/data/en_US.news.txt", "r")
 newsC <- readLines(newsCon)
 close(newsCon)
@@ -16,8 +17,8 @@ newsLength <- length(newsC)
 newsAvgChar <- round(sum(nchar(newsC))/newsLength,0)
 newsSum <- summary(nchar(newsC))
 
-news <- sample(newsC, length(newsC)*.05)
-write.table(news, "en_US.news.sample.txt")
+news <- sample(newsC, length(newsC)*.03)
+write.table(news, "en_US.news.sample3.txt")
 ```
 
 ```{r readTwitter, eval=FALSE}
@@ -29,8 +30,8 @@ twitterLength <- length(twitterC)
 twitterAvgChar <- round(sum(nchar(twitterC))/twitterLength,0)
 twitterSum <- summary(nchar(twitterC))
 
-twitter <- sample(twitterC, length(twitterC)*.05)
-write.table(twitter, "en_US.twitter.sample.txt")
+twitter <- sample(twitterC, length(twitterC)*.03)
+write.table(twitter, "en_US.twitter.sample3.txt")
 ```
 
 ```{r readBlog, eval=FALSE}
@@ -42,8 +43,8 @@ blogLength <- length(blogC)
 blogAvgChar <- round(sum(nchar(blogC))/blogLength,0)
 blogSum <- summary(nchar(blogC))
 
-blog <- sample(blogC, length(blogC)*.05)
-write.table(blog, "en_US.blog.sample.txt")
+blog <- sample(blogC, length(blogC)*.03)
+write.table(blog, "en_US.blog.sample3.txt")
 
 ```
 
