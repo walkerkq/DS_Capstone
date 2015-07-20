@@ -168,7 +168,23 @@ Via [Wikipedia](https://en.wikipedia.org/wiki/Zipf%27s_law): "Zipf's law states 
 
 ```{r zipfPlot, echo=TRUE}
 plot(x=log10(freqUni$freq), y=log10(freqUni$rank), type="l", main="Zipf's Law")
+
+# find how many terms are only used once
+lonelyRiders <- function(x) {
+    singles <- rowSums(as.matrix(x))
+    singles <- singles[order(singles)]
+    singles <- subset(singles, singles == 1)
+    singles <- length(singles)
+    singleRate <- singles/dim(x)[1]
+    return(singles)
+}
+lonelyUni <- lonelyRiders(uniCorpus)
+lonelyBi <- lonelyRiders(biCorpus)
+lonelyTri <- lonelyRiders(triCorpus)
+lonelyQuad <- lonelyRiders(quadCorpus)
 ```
+
+
 
 ### Compressing the data set  
 
