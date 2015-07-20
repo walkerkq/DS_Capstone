@@ -27,6 +27,8 @@ news <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.news.samp
 twitter <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.twitter.sample.txt", stringsAsFactors=FALSE)
 blog <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.blog.sample.txt", stringsAsFactors=FALSE)
 
+#news<-iconv(t, to="ASCII", sub = "")
+
 #news <- read.table("/Users/kaylinwalker/R/DS_Capstone/data/en_US.news.sample.txt", stringsAsFactors=FALSE)
 #twitter <- read.table("/Users/kaylinwalker/R/DS_Capstone/data/en_US.twitter.sample.txt", stringsAsFactors=FALSE)
 #blog <- read.table("/Users/kaylinwalker/R/DS_Capstone/data/en_US.blog.sample.txt", stringsAsFactors=FALSE)
