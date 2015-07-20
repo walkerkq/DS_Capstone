@@ -1,0 +1,73 @@
+DS Capstone NLP Model
+====================
+
+
+```{r setOpts, warning=FALSE, message=FALSE, echo=FALSE}
+library("knitr")
+library("tm")
+library("RWeka")
+library("plyr")
+library("ggplot2")
+library("gridExtra")
+library("SnowballC")
+
+library("caret")
+opts_chunk$set(cache=TRUE, warning=FALSE, message=FALSE, fig.height=4, fig.width=4, echo=FALSE)
+```
+
+```{r load}
+setwd("/Users/kwalker/git_projects/DS_Capstone")
+#setwd("/Users/kaylinwalker/R/DS_Capstone")
+unigrams <- read.csv("compressed_freq/uniCompress.csv", stringsAsFactors=FALSE)
+bigrams <- read.csv("compressed_freq/biCompress.csv", stringsAsFactors=FALSE)
+trigrams <- read.csv("compressed_freq/triCompress.csv", stringsAsFactors=FALSE)
+quadgrams <- read.csv("compressed_freq/quadCompress.csv", stringsAsFactors=FALSE)
+
+#corpus <- Corpus(DirSource("clean_corpus"), readerControl=list(language="en"))
+
+```
+
+```{r trainPredictSimple}
+# separate into train and test sets
+#set.set(1234)
+#trainIndex <- createDataPartition(cor)
+# get frequency distribution of two word ngrams
+```
+
+```{r testing}
+cleanInput <- function(x) {
+    raw_input <- x
+    input <- tolower(raw_input)
+    input <- gsub("[^[:alpha:] ]", "", input)
+    input <- strsplit(input, " ")
+    return(input)
+}
+
+match <- function(input, nlength, grams, onelessgrams) {
+    input <- cleanInput(input)
+    if(nlength != 1) { nlength2 <- nlength -2; end <- "\\s" 
+        } else { nlength2 <- 0; end <- "$" }
+    chunk <- input[[1]][ (length(input[[1]])-nlength2):length(input[[1]]) ] 
+    chunk <- paste(chunk, collapse=" ")
+    chunk <- gsub("^\\s+|\\s+$", "", chunk)
+    n <- grams[grep(paste("^", chunk, end, sep=""), grams$word), ]
+    m <- onelessgrams[grep(paste("^", chunk, "$", sep=""), onelessgrams$word), ]
+    n$prob <- n$freq/m$freq[1]
+    return(n)
+}
+
+mostLikely <- function(input) {
+    m4 <- match(input, 4, quadgrams, trigrams)
+    m3 <- match(input, 3, trigrams, bigrams)
+    m2 <- match(input, 2, bigrams, unigrams)
+    jumble <- rbind(m4, m3, m2)
+    jumble <- jumble[order(-jumble$prob),]
+    winner <- jumble[1,1]
+    winner <- strsplit(winner, " ")
+    winner <- winner[[1]][length(winner[[1]])]
+    return(winner)
+}
+
+
+
+```

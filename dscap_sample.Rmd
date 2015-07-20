@@ -1,0 +1,39 @@
+DS Capstone Sampling
+=============================
+```{r setOpts, warning=FALSE, message=FALSE}
+library("knitr")
+library("tm")
+library("RWeka")
+opts_chunk$set(cache=TRUE, warning=FALSE, message=FALSE)
+setwd("/Users/kaylinwalker/")
+```
+
+```{r readNews, eval=FALSE}
+newsCon <- file("Desktop/data/en_US.news.txt", "r")
+newsC <- readLines(newsCon)
+close(newsCon)
+
+news <- sample(newsC, length(newsC)*.03)
+write.table(news, "en_US.news.sample3.txt")
+```
+
+```{r readTwitter, eval=FALSE}
+twitterCon <- file("Desktop/data/en_US.twitter.txt", "r")
+twitterC <- readLines(twitterCon)
+close(twitterCon)
+
+twitter <- sample(twitterC, length(twitterC)*.03)
+write.table(twitter, "en_US.twitter.sample3.txt")
+```
+
+```{r readBlog, eval=FALSE}
+blogCon <- file("Desktop/data/en_US.blogs.txt", "r")
+blogC <- readLines(blogCon)
+close(blogCon)
+
+blog <- sample(blogC, length(blogC)*.03)
+write.table(blog, "en_US.blog.sample3.txt")
+```
+
+
+

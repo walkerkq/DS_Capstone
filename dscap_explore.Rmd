@@ -1,4 +1,4 @@
-Data Science Capstone NLP Exploratory Analysis
+DS Capstone NLP Exploratory Analysis
 =============================
 
 # Introduction  
@@ -23,13 +23,16 @@ Token: a piece of language; a word
 Tokenize: split text into individual pieces/words  
 
 ```{r loadSamples}
-#news <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.news.sample3.txt", stringsAsFactors=FALSE)
-#twitter <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.twitter.sample3.txt", stringsAsFactors=FALSE)
-#blog <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.blog.sample3.txt", stringsAsFactors=FALSE)
+news <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.news.sample3.txt", stringsAsFactors=FALSE)
+twitter <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.twitter.sample3.txt", stringsAsFactors=FALSE)
+blog <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.blog.sample3.txt", stringsAsFactors=FALSE)
 
-news <- read.table("/Users/kaylinwalker/R/DS_Capstone/data/en_US.news.sample3.txt", stringsAsFactors=FALSE)
-twitter <- read.table("/Users/kaylinwalker/R/DS_Capstone/data/en_US.twitter.sample3.txt", stringsAsFactors=FALSE)
-blog <- read.table("/Users/kaylinwalker/R/DS_Capstone/data/en_US.blog.sample3.txt", stringsAsFactors=FALSE)
+#news <- read.table("/Users/kaylinwalker/R/DS_Capstone/data/en_US.news.sample3.txt", stringsAsFactors=FALSE)
+#twitter <- read.table("/Users/kaylinwalker/R/DS_Capstone/data/en_US.twitter.sample3.txt", stringsAsFactors=FALSE)
+#blog <- read.table("/Users/kaylinwalker/R/DS_Capstone/data/en_US.blog.sample3.txt", stringsAsFactors=FALSE)
+
+allSamples <- rbind(news, twitter, blog)
+#write.csv(allSamples,"allSamples.csv", row.names=FALSE)
 ```
 
 # Exploratory Analysis  
@@ -69,9 +72,9 @@ kable(wordTable, row.names=FALSE)
   
 **Sample lines**  
 ```{r sampleLines}
-paste("NEWS:  ", news[100,])
-paste("TWITTER:  ", twitter[100,])
-paste("BLOG:  ", blog[100,])
+paste("NEWS:  ", news[110,])
+paste("TWITTER:  ", twitter[110,])
+paste("BLOG:  ", blog[110,])
 ```
 
 ### Cleaning the data  set
@@ -101,14 +104,16 @@ To clean the data, I will reload in the data as a corpus in order to use the `tm
 - Transform to lowercase  
 
 ```{r exploreCorpus, echo=TRUE}
-#setwd("/Users/kwalker/git_projects/DS_Capstone/")
-setwd("/Users/kaylinwalker/R/DS_Capstone")
+setwd("/Users/kwalker/git_projects/DS_Capstone/")
+#setwd("/Users/kaylinwalker/R/DS_Capstone")
 corpus <- Corpus(DirSource("data"), readerControl=list(language="en"))
 
 corpus <- tm_map(corpus, removeNumbers)
 corpus <- tm_map(corpus, removePunctuation)
 corpus <- tm_map(corpus, stripWhitespace)
 corpus <- tm_map(corpus, content_transformer(tolower))
+
+#writeCorpus(corpus, path=".", filenames=paste(seq_along(corpus)))
 ```
 
 ### Tokenizing the data set  
@@ -118,13 +123,15 @@ Using the `RWeka` package in conjunction with the `tm` package, I have created t
 
 ```{r tokenize, echo=TRUE}
 options(mc.cores=1)
-unigrams <- function(x) NGramTokenizer(x, Weka_control(min=1, max=1))
+unigrams <- function(x) NGramTokenizer(x, Weka_control(min=0, max=1))
 bigrams <- function(x) NGramTokenizer(x, Weka_control(min=2, max=2))
 trigrams <- function(x) NGramTokenizer(x, Weka_control(min=3, max=3))
+quadgrams <- function(x) NGramTokenizer(x, Weka_control(min=4, max=4))
 
-uniCorpus <- TermDocumentMatrix(corpus, control=list(tokenize = unigrams))
+uniCorpus <- TermDocumentMatrix(corpus, control=list(tokenize = unigrams, wordLengths=c(1,Inf)))
 biCorpus <- TermDocumentMatrix(corpus, control=list(tokenize = bigrams))
 triCorpus <- TermDocumentMatrix(corpus, control=list(tokenize = trigrams))
+quadCorpus <- TermDocumentMatrix(corpus, control=list(tokenize = quadgrams))
 ```
 
 ### Describing the tokenized data set  
@@ -139,10 +146,10 @@ freqFunc <- function(corpus) {
      table$rank <- 1:length(table[,1])
      return(table)
 }
-
 freqUni <- freqFunc(uniCorpus)
 freqBi <- freqFunc(biCorpus)
 freqTri <- freqFunc(triCorpus)
+freqQuad <- freqFunc(quadCorpus)
 
 gramTable <- cbind(freqUni[1:10, c(3,1,2) ], freqBi[1:10, 1:2],freqTri[1:10, 1:2 ])
 colnames(gramTable) <- c("rank", "uni-gram", "f", "bi-gram", "f", "tri-gram", "f")
@@ -172,6 +179,7 @@ plot(x=log10(freqUni$freq), y=log10(freqUni$rank), type="l", main="Zipf's Law")
 
 freqUni$Sum <- cumsum(freqUni$freq)
 uni50 <- subset(freqUni, freqUni$Sum >  sum(freqUni$freq)*0.5) #266
+uni90 <- subset(freqUni, freqUni$Sum >  sum(freqUni$freq)*0.9) 
 
 compressFunc <- function(fTable, fCorpus) {
      fTable$Sum <- cumsum(fTable$freq)
@@ -186,22 +194,28 @@ compressFunc <- function(fTable, fCorpus) {
 uniCompress <- compressFunc(freqUni, uniCorpus)
 biCompress <- compressFunc(freqBi, biCorpus)
 triCompress <- compressFunc(freqTri, triCorpus)
+quadCompress <- compressFunc(freqQuad, quadCorpus)
+
+#allCompress <- compressFunc(freqAll, allCorpus)
+#write.csv(allCompress, "allCompress.csv", row.names=FALSE)
+#write.csv(uniCompress, "uniCompress.csv", row.names=FALSE)
+#write.csv(biCompress, "biCompress.csv", row.names=FALSE)
+#write.csv(triCompress, "triCompress.csv", row.names=FALSE)
+#write.csv(quadCompress, "quadCompress.csv", row.names=FALSE)
 
 ```
 To compute this, I calculated a cumulative sum of the token frequencies and stopped at the row that passed 50%/90% of total tokens.  
 
-To cover 50% of all word instances, a dictionary of only **`r uni50[1,3]`** words are needed. To cover 90% of all word instances, a dictionary of **`r uniCutoff`** words are needed.
+To cover 50% of all word instances, a dictionary of only **`r uni50[1,3]`** words are needed. To cover 90% of all word instances, a dictionary of **`r uni90[1,3]`** words are needed.
+
+# Next Steps  
+
+Next steps include:  
+- Creating a corpus each for bi-, tri- and 4 grams;  
+- compressing each corpora to cover 90% of tokens;  
+- developing a model to match the most likely bi-, tri- or 4 gram given an input string (using a Markov Chain);  
+- train the model and compare to test set;  
+- optimzing for running speed;  
+- implement a Shiny app.  
 
 
-```{r}
-# How do you evaluate how many of the words come from foreign languages? 
-
-```
-
-
-```{r trainPredictSimple}
-# combine corpora
-# separate into train and test sets
-# get frequency distribution of two word ngrams
-m <- Corpus(VectorSource(blog))
-```
