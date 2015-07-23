@@ -13,8 +13,25 @@ newsCon <- file("Desktop/data/en_US.news.txt", "r")
 newsC <- readLines(newsCon)
 close(newsCon)
 
-news <- sample(newsC, length(newsC)*.03)
-write.table(news, "en_US.news.sample3.txt")
+set.seed(234)
+smp_size <- floor(0.03 * length(newsC))
+train_ind <- sample(seq_len(length(newsC)), size = smp_size)
+
+newsTrain <- newsC[train_ind ]
+newsTest <- newsC[-train_ind ]
+
+write.table(newsTrain, "en_US.news.train.03.txt") # training data
+
+test_size <- floor(0.0025 * length(newsTest))
+test_train_ind <- sample(seq_len(length(newsTest)), size = test_size)
+
+newsTestSmall <- newsTest[test_train_ind  ]
+newsTestExtra <- newsTest[-test_train_ind  ]
+write.table(newsTestSmall, "en_US.news.test.0025.txt")
+#write.table(newsTestExtra, "en_US.news.test.extra.txt")
+
+#news <- sample(newsC, length(newsC)*.0025)
+#write.table(news, "en_US.news.test.025.txt")
 ```
 
 ```{r readTwitter, eval=FALSE}
@@ -22,8 +39,27 @@ twitterCon <- file("Desktop/data/en_US.twitter.txt", "r")
 twitterC <- readLines(twitterCon)
 close(twitterCon)
 
-twitter <- sample(twitterC, length(twitterC)*.03)
-write.table(twitter, "en_US.twitter.sample3.txt")
+#twitter <- sample(twitterC, length(twitterC)*.0025)
+#write.table(twitter, "en_US.twitter.test.025.txt")
+
+set.seed(234)
+smp_size <- floor(0.03 * length(twitterC))
+train_ind <- sample(seq_len(length(twitterC)), size = smp_size)
+
+twitterTrain <- twitterC[train_ind ]
+twitterTest <- twitterC[-train_ind ]
+
+write.table(twitterTrain, "en_US.twitter.train.03.txt")
+
+test_size <- floor(0.0025 * length(twitterTest))
+test_train_ind <- sample(seq_len(length(twitterTest)), size = test_size)
+
+twitterTestSmall <- twitterTest[test_train_ind  ]
+twitterTestExtra <- twitterTest[-test_train_ind  ]
+
+write.table(twitterTestSmall, "en_US.twitter.test.0025.txt")
+#write.table(twitterTestExtra, "en_US.twitter.test.extra.txt")
+
 ```
 
 ```{r readBlog, eval=FALSE}
@@ -31,8 +67,26 @@ blogCon <- file("Desktop/data/en_US.blogs.txt", "r")
 blogC <- readLines(blogCon)
 close(blogCon)
 
-blog <- sample(blogC, length(blogC)*.03)
-write.table(blog, "en_US.blog.sample3.txt")
+#blog <- sample(blogC, length(blogC)*.0025)
+#write.table(blog, "en_US.blog.test.025.txt")
+
+set.seed(234)
+smp_size <- floor(0.03 * length(blogC))
+train_ind <- sample(seq_len(length(blogC)), size = smp_size)
+
+blogTrain <- blogC[train_ind ]
+blogTest <- blogC[-train_ind ]
+
+write.table(blogTrain, "en_US.blog.train.03.txt")
+
+test_size <- floor(0.0025 * length(blogTest))
+test_train_ind <- sample(seq_len(length(blogTest)), size = test_size)
+
+blogTestSmall <- blogTest[test_train_ind  ]
+blogTestExtra <- blogTest[-test_train_ind  ]
+
+write.table(blogTestSmall, "en_US.blog.test.0025.txt")
+#write.table(blogTestExtra, "en_US.blog.test.extra.txt")
 ```
 
 
