@@ -1,9 +1,10 @@
 DS Capstone NLP Exploratory Analysis
 =============================
+kwalker `r date()`
 
 # Introduction  
 
-This report endeavors to explore and understand a three large text files. The text has been collected from three sources: blogs, news and Twitter. The data is from a corpus called [HC Corpora](www.corpora.heliohost.org). See the [readme file](http://www.corpora.heliohost.org/aboutcorpus.html) for details on the corpora available.  
+This report endeavors to explore and understand a three large text files. The text has been collected from three sources: blogs, news and Twitter. The data is from a corpus called [HC Corpora](www.corpora.heliohost.org). See the [readme file](http://www.corpora.heliohost.org/aboutcorpus.html) for details on the corpora.  
 
 The text files will ultimately be used to test and train a model that will predict the next word in an unfinished sentence, along the lines of the app [SwiftKey](https://itunes.apple.com/app/swiftkey-keyboard/id911813648?ls=1&mt=8), which descibes itself as "a smart keyboard that learns from you, replacing your device’s built-in keyboard with one that adapts to the way you type. The app learns your writing style to give you super-accurate autocorrect and intelligent next-word prediction, reducing keystrokes and getting smarter over time." 
 
@@ -23,16 +24,11 @@ Token: a piece of language; a word
 Tokenize: split text into individual pieces/words  
 
 ```{r loadSamples}
-news <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.news.sample3.txt", stringsAsFactors=FALSE)
-twitter <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.twitter.sample3.txt", stringsAsFactors=FALSE)
-blog <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.blog.sample3.txt", stringsAsFactors=FALSE)
-
-#news <- read.table("/Users/kaylinwalker/R/DS_Capstone/data/en_US.news.sample3.txt", stringsAsFactors=FALSE)
-#twitter <- read.table("/Users/kaylinwalker/R/DS_Capstone/data/en_US.twitter.sample3.txt", stringsAsFactors=FALSE)
-#blog <- read.table("/Users/kaylinwalker/R/DS_Capstone/data/en_US.blog.sample3.txt", stringsAsFactors=FALSE)
-
+news <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.news.train.03.txt", stringsAsFactors=FALSE)
+twitter <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.twitter.train.03.txt", stringsAsFactors=FALSE)
+blog <- read.table("/Users/kwalker/git_projects/DS_Capstone/data/en_US.blog.train.03.txt", stringsAsFactors=FALSE)
 allSamples <- rbind(news, twitter, blog)
-#write.csv(allSamples,"allSamples.csv", row.names=FALSE)
+#write.table(allSamples, "en_US.all.txt")
 ```
 
 # Exploratory Analysis  
@@ -46,7 +42,7 @@ Our exploratory analysis will include:
 - estimating the size of corpus needed to satisfy our task.   
 
 ### Describing the data set  
-The three files in their entirety amount to more than 500 Mb and take several minutes just to load into the R workspace, so each file was sampled at 3% to produce files small enough to work with. 
+The three files in their entirety amount to more than 500 Mb and take several minutes just to load into the R workspace, so each file was sampled at 3% to produce files small enough to work with (with about 0.25% of each file was reserved for testing later on).   
 
 The Twitter data set is by far the longest, with more than twice as many lines as the news and blog data sets, though the blog data set leads in the total number of tokens and the number of unique tokens.  
 
@@ -89,11 +85,7 @@ All words will be transformed into lowercase. This poses some potential issues w
 I have intentionally left in the English stopwords - a, an, and, the, but, to - because they play an important role in linking text. If the goal was to analyze sentiment or determine subject, we could leave them out, but for predicting words, you need "to" in "I went to the store" for it to make sense.  
 
 **Profanity**  
-?????  
-I'm not sure that I mind profanity. Most swear words are adjectives, which wouldn't cause too many problems to remove.     
-
-**Typos, garbage and foreign languages**  
-??????  
+I don't mind profanity. If the explicit word appears enough times to be the most probable next word, then it should be kept in the dataset.      
 
 **Cleaning**  
 To clean the data, I will reload in the data as a corpus in order to use the `tm` package.  The order of cleaning is:  
@@ -104,21 +96,17 @@ To clean the data, I will reload in the data as a corpus in order to use the `tm
 - Transform to lowercase  
 
 ```{r exploreCorpus, echo=TRUE}
-setwd("/Users/kwalker/git_projects/DS_Capstone/")
-#setwd("/Users/kaylinwalker/R/DS_Capstone")
-corpus <- Corpus(DirSource("data"), readerControl=list(language="en"))
-
+setwd("/Users/kwalker/git_projects/DS_Capstone/data")
+corpus <- Corpus(DirSource("all"), readerControl=list(language="en")) # read in a file that contains all three data sets
 corpus <- tm_map(corpus, removeNumbers)
 corpus <- tm_map(corpus, removePunctuation)
 corpus <- tm_map(corpus, stripWhitespace)
 corpus <- tm_map(corpus, content_transformer(tolower))
 
-#writeCorpus(corpus, path=".", filenames=paste(seq_along(corpus)))
 ```
 
 ### Tokenizing the data set  
-
-Using the `RWeka` package in conjunction with the `tm` package, I have created three term document matrices - one for unigrams, one for bigrams, and one for trigrams.  
+Tokenizing the data will split the text files (corpus) up into bite size pieces - words. We can choose how big we want the bite sizes to be: unigrams are one word; bigrams are two words; trigrams are 3 words, and so on. Using the `RWeka` package in conjunction with the `tm` package, I have created four term document matrices - one for unigrams, one for bigrams, one for trigrams and one for quadgrams.  
 
 
 ```{r tokenize, echo=TRUE}
@@ -135,7 +123,7 @@ quadCorpus <- TermDocumentMatrix(corpus, control=list(tokenize = quadgrams))
 ```
 
 ### Describing the tokenized data set  
-*Some words are more frequent than others - what are the distributions of word frequencies?*  
+Some words are more frequent than others - what are the distributions of word frequencies? It's clear that the majority of the corpus is made up of relatively few highly repeated words, accompanied by a huge percentage of "rare" or "sparse" terms that only appear a few times.   
 
 ```{r freqWords, echo=TRUE}
 freqFunc <- function(corpus) {
@@ -168,7 +156,9 @@ Via [Wikipedia](https://en.wikipedia.org/wiki/Zipf%27s_law): "Zipf's law states 
 
 ```{r zipfPlot, echo=TRUE}
 plot(x=log10(freqUni$freq), y=log10(freqUni$rank), type="l", main="Zipf's Law")
+```
 
+```{r smoothing}
 # find how many terms are only used once
 lonelyRiders <- function(x) {
     singles <- rowSums(as.matrix(x))
@@ -176,7 +166,7 @@ lonelyRiders <- function(x) {
     singles <- subset(singles, singles == 1)
     singles <- length(singles)
     singleRate <- singles/dim(x)[1]
-    return(singles)
+    return(singleRate)
 }
 lonelyUni <- lonelyRiders(uniCorpus)
 lonelyBi <- lonelyRiders(biCorpus)
@@ -189,10 +179,6 @@ lonelyQuad <- lonelyRiders(quadCorpus)
 ### Compressing the data set  
 
 ```{r}
-# How many unique words do you need in a frequency sorted dictionary to cover 50% of all word instances in the language? 90%?
-
-# Can you think of a way to increase the coverage -- identifying words that may not be in the corpora or using a smaller number of words in the dictionary to cover the same number of phrases?
-
 freqUni$Sum <- cumsum(freqUni$freq)
 uni50 <- subset(freqUni, freqUni$Sum >  sum(freqUni$freq)*0.5) #266
 uni90 <- subset(freqUni, freqUni$Sum >  sum(freqUni$freq)*0.9) 
@@ -211,15 +197,8 @@ uniCompress <- compressFunc(freqUni, uniCorpus)
 biCompress <- compressFunc(freqBi, biCorpus)
 triCompress <- compressFunc(freqTri, triCorpus)
 quadCompress <- compressFunc(freqQuad, quadCorpus)
-
-#allCompress <- compressFunc(freqAll, allCorpus)
-#write.csv(allCompress, "allCompress.csv", row.names=FALSE)
-#write.csv(uniCompress, "uniCompress.csv", row.names=FALSE)
-#write.csv(biCompress, "biCompress.csv", row.names=FALSE)
-#write.csv(triCompress, "triCompress.csv", row.names=FALSE)
-#write.csv(quadCompress, "quadCompress.csv", row.names=FALSE)
-
 ```
+An interesting question was asked, which will become important as size becomes an issue: How many unique words do you need in a frequency sorted dictionary to cover 50% of all word instances in the language? 90%?
 To compute this, I calculated a cumulative sum of the token frequencies and stopped at the row that passed 50%/90% of total tokens.  
 
 To cover 50% of all word instances, a dictionary of only **`r uni50[1,3]`** words are needed. To cover 90% of all word instances, a dictionary of **`r uni90[1,3]`** words are needed.

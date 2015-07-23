@@ -9,17 +9,26 @@ shinyServer(function(input, output) {
      
     source("functions.R")
     
-    setwd("/Users/kwalker/git_projects/DS_Capstone")
-    #setwd("/Users/kaylinwalker/R/DS_Capstone")
-    unigrams <- read.csv("compressed_freq/uniCompress.csv", stringsAsFactors=FALSE)
-    bigrams <- read.csv("compressed_freq/biCompress.csv", stringsAsFactors=FALSE)
-    trigrams <- read.csv("compressed_freq/triCompress.csv", stringsAsFactors=FALSE)
-    quadgrams <- read.csv("compressed_freq/quadCompress.csv", stringsAsFactors=FALSE)
-    
-    
     output$text1 <- renderText({
+        mostLikely(input$text, 1)
+    })
+    output$text2 <- renderText({
+        mostLikely(input$text, 2)
+    })
+    output$text3 <- renderText({
+        mostLikely(input$text, 3)
+    })
+    output$text4 <- renderText({
+        mostLikely(input$text, 4)
+    })
+    output$text5 <- renderText({
+        mostLikely(input$text, 5)
         
-        mostLikely(input$text)
+    })
+    
+    output$yourSentence <- renderText({
+        
+        input$text
         
     })
     
