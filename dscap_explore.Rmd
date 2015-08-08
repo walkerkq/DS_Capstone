@@ -172,6 +172,16 @@ lonelyUni <- lonelyRiders(uniCorpus)
 lonelyBi <- lonelyRiders(biCorpus)
 lonelyTri <- lonelyRiders(triCorpus)
 lonelyQuad <- lonelyRiders(quadCorpus)
+
+
+# Get delta for Kneser-Ney smoothing
+deltabigrams <- rowSums(as.matrix(x))
+deltabigrams <- deltabigrams[order(deltabigrams)]
+singleBigrams <- subset(deltabigrams, deltabigrams == 1)
+doubleBigrams <- subset(deltabigrams, deltabigrams == 2)
+
+delta <- length(singleBigrams) / (length(singleBigrams) + (length(doubleBigrams)*2))
+# delta is .796
 ```
 
 

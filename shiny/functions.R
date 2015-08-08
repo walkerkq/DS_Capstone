@@ -1,5 +1,5 @@
-setwd("/Users/kwalker/git_projects/DS_Capstone")
-#setwd("/Users/kaylinwalker/R/DS_Capstone")
+#setwd("/Users/kwalker/git_projects/DS_Capstone/shiny")
+#setwd("/Users/kaylinwalker/R/DS_Capstone/shiny")
 
 # Model functions
 unigrams <- read.csv("compressed_freq/uniCompress.csv", stringsAsFactors=FALSE)

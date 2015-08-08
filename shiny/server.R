@@ -1,13 +1,9 @@
 library("shiny")
 
 shinyServer(function(input, output) {
-    
-    #install.packages(c("tm", "RWeka", "SnowballC"))
-    library(tm)
-    library(RWeka)
-    library(SnowballC)
      
-    source("functions.R")
+    #source("functions.R")
+    source("functions_pKN.R")
     
     output$text1 <- renderText({
         mostLikely(input$text, 1)
