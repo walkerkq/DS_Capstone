@@ -29,14 +29,9 @@ The model
 - The user's tokenized **input** is used to match potential phrases in each n-gram corpus   
 - Each match's **probability** is calculated based on how often it appears in relation to how often the input string appears
 - Their probabilities are smoothed using **Kneser-Ney smoothing** to help account for phrases not found in the corpora
-- Chooses the five most likely answers based on how probable those words are to occur together   
+- The model then chooses the five most likely answers based on how probable those words are to occur together   
 
 The app
 ========================================================
-```{r block}
-setwd("/Users/kwalker/git_projects/DS_Capstone/shiny")
-#setwd("/Users/kaylinwalker/R/DS_Capstone/shiny")
-```
-
-App text  
-[alt text](images/app.png)
+The user inputs a string of words and is served five options for their next word choice. A secondary tab explains the model. Use the app here: [https://walkerkq.shinyapps.io/DS_Cap]("https://walkerkq.shinyapps.io/DS_Cap").   
+![The app](app2.png)
